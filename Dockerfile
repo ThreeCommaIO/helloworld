@@ -1,14 +1,13 @@
-FROM golang as builder
-ENV WORKDIR /go/src/github.com/threecommaio/helloworld
+FROM golang:1.11rc2 as builder
+WORKDIR /src
+COPY go.mod .
+RUN go mod download
 
-WORKDIR ${WORKDIR}
-
-COPY . ${WORKDIR}
+COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app
 
 FROM alpine:latest
-ENV WORKDIR /go/src/github.com/threecommaio/helloworld
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=builder ${WORKDIR}/app /go/bin/app
+COPY --from=builder /src/app /go/bin/app
 ENTRYPOINT [ "/go/bin/app" ]
