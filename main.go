@@ -1,17 +1,35 @@
+// basic webserver with http2 cleartext support
 package main
 
 import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
+
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
-}
-
 func main() {
-	http.HandleFunc("/", handler)
-	log.Println("Listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Save a copy of this request for debugging.
+		requestDump, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		fmt.Fprint(w, string(requestDump))
+	})
+
+	port := ":8080"
+	h2s := &http2.Server{
+		// ...
+	}
+	h1s := &http.Server{
+		Addr:    port,
+		Handler: h2c.NewHandler(handler, h2s),
+	}
+	log.Println("Listening on", port)
+	log.Fatal(h1s.ListenAndServe())
 }
