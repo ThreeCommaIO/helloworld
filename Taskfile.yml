@@ -1,0 +1,31 @@
+# https://taskfile.dev
+
+version: '2'
+
+env:
+  GO111MODULE: "on"
+  CGO_ENABLED: "0"
+
+vars:
+  REGISTRY: threecomma/helloworld
+  VERSION: {sh: echo $(git describe --abbrev=0 --tags)}
+  BINARY: helloworld
+
+tasks:
+  default:
+    cmds:
+      - task: build
+
+  build:
+    cmds:
+      - GOOS={{.GOOS | default OS }} go build -o bin/{{.BINARY}}
+    sources:
+      - "*.go"
+    generates:
+      - bin/{{.BINARY}}
+    method: checksum
+
+  docker:
+    desc: Build a docker container
+    cmds:
+      - docker build -t {{.REGISTRY}}:{{.VERSION}} -f Dockerfile .
